@@ -1,0 +1,32 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to validate image files
+    function isValidImage() {
+      return request.resource.size < 5 * 1024 * 1024  // 5MB limit
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Product images - publicly readable, only writable by authenticated users with admin rights
+    match /product_images/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.auth.token.admin == true
+        && isValidImage();
+    }
+
+    // User profile images - readable by authenticated users, writable only by the user or admin
+    match /user_images/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && (request.auth.uid == userId || request.auth.token.admin == true)
+        && isValidImage();
+    }
+
+    // SECURITY: Deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
