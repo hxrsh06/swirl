@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shopping_swipe_app/data/models/product_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SwipeCardWidget extends StatefulWidget {
   final List<ProductModel> products;
@@ -645,222 +647,229 @@ class SwipeCardWidgetState extends State<SwipeCardWidget> with TickerProviderSta
 
 
   Widget _buildSwipeIndicators(BoxConstraints constraints) {
-    final opacity = (_dragPosition.dx.abs() / (constraints.maxWidth * 0.5)).clamp(0.0, 1.0);
+   final opacity = (_dragPosition.dx.abs() / (constraints.maxWidth * 0.5)).clamp(0.0, 1.0);
 
-    return Stack(
-      children: [
-        // Like indicator (right swipe)
-        if (_dragPosition.dx > 50)
-          Positioned(
-            top: 100,
-            right: 40,
-            child: Transform.rotate(
-              angle: -0.3,
-              child: Opacity(
-                opacity: opacity,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.green.withOpacity(0.3),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.favorite, color: Colors.white, size: 28),
-                      SizedBox(width: 8),
-                      Text(
-                        'LIKE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+   return Stack(
+     children: [
+       // Like indicator (right swipe)
+       if (_dragPosition.dx > 50)
+         Positioned(
+           top: 100,
+           right: 40,
+           child: Transform.rotate(
+             angle: -0.2,
+             child: Opacity(
+               opacity: opacity,
+               child: Container(
+                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                 decoration: BoxDecoration(
+                   color: Theme.of(context).colorScheme.primary.withOpacity(0.95),
+                   borderRadius: BorderRadius.circular(30),
+                   boxShadow: [
+                     BoxShadow(
+                       color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                       blurRadius: 20,
+                       spreadRadius: 2,
+                       offset: const Offset(0, 4),
+                     ),
+                   ],
+                 ),
+                 child: Row(
+                   mainAxisSize: MainAxisSize.min,
+                   children: [
+                     Icon(Icons.favorite, color: Colors.white, size: 24),
+                     const SizedBox(width: 8),
+                     Text(
+                       'LIKE',
+                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                         color: Colors.white,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+             ),
+           ),
+         ),
 
-        // Dislike indicator (left swipe)
-        if (_dragPosition.dx < -50)
-          Positioned(
-            top: 100,
-            left: 40,
-            child: Transform.rotate(
-              angle: 0.3,
-              child: Opacity(
-                opacity: opacity,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withOpacity(0.3),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.close, color: Colors.white, size: 28),
-                      SizedBox(width: 8),
-                      Text(
-                        'NOPE',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
+       // Dislike indicator (left swipe)
+       if (_dragPosition.dx < -50)
+         Positioned(
+           top: 100,
+           left: 40,
+           child: Transform.rotate(
+             angle: 0.2,
+             child: Opacity(
+               opacity: opacity,
+               child: Container(
+                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                 decoration: BoxDecoration(
+                   color: Theme.of(context).colorScheme.error.withOpacity(0.95),
+                   borderRadius: BorderRadius.circular(30),
+                   boxShadow: [
+                     BoxShadow(
+                       color: Theme.of(context).colorScheme.error.withOpacity(0.4),
+                       blurRadius: 20,
+                       spreadRadius: 2,
+                       offset: const Offset(0, 4),
+                     ),
+                   ],
+                 ),
+                 child: Row(
+                   mainAxisSize: MainAxisSize.min,
+                   children: [
+                     Icon(Icons.close, color: Colors.white, size: 24),
+                     const SizedBox(width: 8),
+                     Text(
+                       'NOPE',
+                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                         color: Colors.white,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                   ],
+                 ),
+               ),
+             ),
+           ),
+         ),
+     ],
+   );
+ }
 
   Widget _buildCard(ProductModel product, {bool isBackground = false, int depth = 0}) {
-    final marginOffset = isBackground ? (depth * 4.0 + 16.0) : 10.0;
+   final marginOffset = isBackground ? (depth * 4.0 + 16.0) : 10.0;
 
-    return Container(
-      margin: EdgeInsets.all(marginOffset),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20.0),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(isBackground ? 0.1 : 0.25),
-            spreadRadius: isBackground ? 0 : 1,
-            blurRadius: isBackground ? 8 : 15,
-            offset: Offset(0, isBackground ? 2 : 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20.0),
-        child: Column(
-          children: [
-            // Product Image - OPTIMIZED with pre-caching
-            Expanded(
-              flex: 3,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _buildOptimizedImage(product),
-                  // Gradient overlay for better text readability
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: 10,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.3),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+   return Container(
+     margin: EdgeInsets.all(marginOffset),
+     decoration: BoxDecoration(
+       borderRadius: BorderRadius.circular(20.0),
+       color: Theme.of(context).cardColor,
+       boxShadow: [
+         BoxShadow(
+           color: Colors.grey.withOpacity(isBackground ? 0.1 : 0.15),
+           spreadRadius: isBackground ? 0 : 1,
+           blurRadius: isBackground ? 8 : 12,
+           offset: Offset(0, isBackground ? 2 : 4),
+         ),
+       ],
+     ),
+     child: ClipRRect(
+       borderRadius: BorderRadius.circular(20.0),
+       child: Column(
+         children: [
+           // Product Image - OPTIMIZED with pre-caching
+           Expanded(
+             flex: 3,
+             child: Stack(
+               fit: StackFit.expand,
+               children: [
+                 _buildOptimizedImage(product),
+                 // Gradient overlay for better text readability
+                 Positioned(
+                   bottom: 0,
+                   left: 0,
+                   right: 0,
+                   child: Container(
+                     height: 40,
+                     decoration: BoxDecoration(
+                       gradient: LinearGradient(
+                         begin: Alignment.topCenter,
+                         end: Alignment.bottomCenter,
+                         colors: [
+                           Colors.transparent,
+                           Colors.black.withOpacity(0.6),
+                         ],
+                       ),
+                     ),
+                   ),
+                 ),
+                 // Like button in top right corner
+                 Positioned(
+                   top: 12,
+                   right: 12,
+                   child: Container(
+                     width: 36,
+                     height: 36,
+                     decoration: BoxDecoration(
+                       color: Colors.white.withOpacity(0.9),
+                       borderRadius: BorderRadius.circular(18),
+                     ),
+                     child: Icon(
+                       Icons.favorite_border,
+                       size: 18,
+                       color: Colors.grey.shade600,
+                     ),
+                   ),
+                 ),
+               ],
+             ),
+           ),
 
-            // Product Info
-            Expanded(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Brand and Name
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            product.brand,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                        ),
-                        Icon(Icons.favorite_border, size: 18, color: Colors.grey.shade400),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    // Price and Rating Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${product.currency}${product.price.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.star, color: Colors.amber.shade600, size: 18),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${product.rating.toStringAsFixed(1)} (${product.reviewCount})',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+           // Product Info
+           Expanded(
+             flex: 1,
+             child: Padding(
+               padding: const EdgeInsets.all(16.0),
+               child: Column(
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                 children: [
+                   // Brand and Name
+                   Text(
+                     product.brand,
+                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                       color: Theme.of(context).colorScheme.primary,
+                       fontWeight: FontWeight.w600,
+                     ),
+                   ),
+                   const SizedBox(height: 4),
+                   Text(
+                     product.name,
+                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                       fontWeight: FontWeight.bold,
+                       color: Theme.of(context).textTheme.bodyLarge?.color,
+                     ),
+                     maxLines: 2,
+                     overflow: TextOverflow.ellipsis,
+                   ),
+                   const SizedBox(height: 8),
+                   // Price and Rating Row
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                     crossAxisAlignment: CrossAxisAlignment.end,
+                     children: [
+                       Text(
+                         '${product.currency}${product.price.toStringAsFixed(2)}',
+                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                           fontWeight: FontWeight.bold,
+                           color: Theme.of(context).colorScheme.primary,
+                         ),
+                       ),
+                       Row(
+                         children: [
+                           Icon(Icons.star, color: Colors.amber.shade600, size: 16),
+                           const SizedBox(width: 4),
+                           Text(
+                             '${product.rating.toStringAsFixed(1)}',
+                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                               color: Theme.of(context).colorScheme.onSurfaceVariant,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ],
+                   ),
+                 ],
+               ),
+             ),
+           ),
+         ],
+       ),
+     ),
+   );
+ }
 
   // PERFORMANCE OPTIMIZED IMAGE LOADING with pre-caching
   Widget _buildOptimizedImage(ProductModel product) {
@@ -893,11 +902,12 @@ class SwipeCardWidgetState extends State<SwipeCardWidget> with TickerProviderSta
       fadeInCurve: Curves.easeIn,
       fadeOutCurve: Curves.easeOut,
 
-      // PERFORMANCE: Optimized loading placeholder
-      placeholder: (context, url) => Container(
-        color: Colors.grey.shade200,
-        child: const Center(
-          child: Icon(Icons.image, size: 40, color: Colors.grey),
+      // PERFORMANCE: Enhanced shimmer loading placeholder
+      placeholder: (context, url) => Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+          color: Colors.white,
         ),
       ),
 

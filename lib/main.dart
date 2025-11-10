@@ -12,6 +12,9 @@ import 'package:shopping_swipe_app/presentation/pages/notifications_page.dart';
 import 'package:shopping_swipe_app/presentation/pages/search_page.dart';
 import 'package:shopping_swipe_app/presentation/pages/profile_page.dart';
 import 'package:shopping_swipe_app/presentation/providers/swipe_provider.dart';
+import 'package:shopping_swipe_app/presentation/theme/app_theme.dart';
+import 'package:shopping_swipe_app/presentation/utils/page_transitions.dart';
+import 'package:shopping_swipe_app/presentation/constants/app_spacing.dart';
 import 'config/firebase_options.dart';
 
 void main() async {
@@ -59,22 +62,8 @@ class ShoppingSwipeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SWIRL.',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       home: MainApp(),
       routes: {
         '/cart': (context) => const CartPage(),
@@ -101,7 +90,6 @@ class _MainAppState extends ConsumerState<MainApp> {
     HomePage(),
     FavoritesPage(),
     CartPage(),
-    NotificationsPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -147,11 +135,6 @@ class _MainAppState extends ConsumerState<MainApp> {
                   )
                 : const Icon(Icons.shopping_cart),
             label: 'Cart',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.notifications_outlined),
-            selectedIcon: Icon(Icons.notifications),
-            label: 'Notifications',
           ),
         ],
       ),

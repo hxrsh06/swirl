@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:shopping_swipe_app/data/models/product_model.dart';
+import 'package:shopping_swipe_app/data/models/cart_item_model.dart';
 import 'package:shopping_swipe_app/data/services/cart_persistence_service.dart';
 import 'package:shopping_swipe_app/domain/usecases/get_products_usecase.dart';
 import 'package:shopping_swipe_app/domain/usecases/update_user_preference_usecase.dart';
@@ -27,7 +28,7 @@ class SwipeState {
   final List<ProductModel> products;
  final bool isLoading;
   final String? error;
-  final List<ProductModel> cartItems;
+  final List<CartItemModel> cartItems;
   final List<SwipeHistoryEntry> swipeHistory; // Track last 5 swipes for undo
   final int totalSwipedCount; // Track total products swiped
   final List<ProductModel> likedProducts; // Track ALL liked products for favorites
@@ -46,7 +47,7 @@ class SwipeState {
     List<ProductModel>? products,
     bool? isLoading,
     String? error,
-    List<ProductModel>? cartItems,
+    List<CartItemModel>? cartItems,
     List<SwipeHistoryEntry>? swipeHistory,
     int? totalSwipedCount,
     List<ProductModel>? likedProducts,
@@ -95,7 +96,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
   /// Load persisted cart and swipe count from local storage
   Future<void> _loadPersistedData() async {
     try {
-      final cart = await _persistenceService.loadCart();
+      final cart = await _persistenceService.loadCartItems();
       final swipedCount = await _persistenceService.loadTotalSwipedCount();
 
       state = state.copyWith(
@@ -285,7 +286,7 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
     return idRegex.hasMatch(productId) && productId.length <= 100; // Prevent overly long IDs
   }
 
- Future<void> addToCart(ProductModel product) async {
+ Future<void> addToCart(ProductModel product, {String? selectedSize, String? selectedColor}) async {
    _logger.d('Adding product to cart: ${product.name}');
    // SECURITY: Validate product data before adding to cart
    if (!_isValidProduct(product)) {
@@ -295,40 +296,146 @@ class SwipeNotifier extends StateNotifier<SwipeState> {
    }
 
    try {
-     final updatedCart = [...state.cartItems, product];
+     // Check if product already exists in cart
+     final existingItemIndex = state.cartItems.indexWhere(
+       (item) => item.product.id == product.id &&
+                 item.selectedSize == selectedSize &&
+                 item.selectedColor == selectedColor
+     );
+
+     List<CartItemModel> updatedCart;
+
+     if (existingItemIndex != -1) {
+       // Product already exists, increment quantity
+       final existingItem = state.cartItems[existingItemIndex];
+       final updatedItem = existingItem.copyWith(quantity: existingItem.quantity + 1);
+       updatedCart = List.from(state.cartItems);
+       updatedCart[existingItemIndex] = updatedItem;
+       _logger.d('Incremented quantity for ${product.name}. New quantity: ${updatedItem.quantity}');
+     } else {
+       // Add new cart item
+       final newItem = CartItemModel(
+         product: product,
+         quantity: 1,
+         selectedSize: selectedSize,
+         selectedColor: selectedColor,
+       );
+       updatedCart = [...state.cartItems, newItem];
+       _logger.d('Added new item to cart: ${product.name}');
+     }
+
      state = state.copyWith(cartItems: updatedCart);
-     _logger.d('Successfully added product to cart. Cart size: ${updatedCart.length}');
+     _logger.d('Successfully updated cart. Cart size: ${updatedCart.length}');
 
      // Persist cart to local storage
-     await _persistenceService.saveCart(updatedCart);
+     await _persistenceService.saveCartItems(updatedCart);
    } catch (e) {
      _logger.e('Failed to add product to cart: $e');
      state = state.copyWith(error: 'Failed to add product to cart: ${e.toString()}');
    }
  }
  
- Future<void> removeFromCart(String productId) async {
+ Future<void> removeFromCart(String productId, {String? selectedSize, String? selectedColor}) async {
    // SECURITY: Validate product ID before removing
    if (!_isValidProductId(productId)) {
      return;
    }
 
-   final updatedCart = state.cartItems.where((item) => item.id != productId).toList();
+   final updatedCart = state.cartItems.where((item) =>
+     !(item.product.id == productId &&
+       item.selectedSize == selectedSize &&
+       item.selectedColor == selectedColor)
+   ).toList();
    state = state.copyWith(cartItems: updatedCart);
 
    // Persist changes
-   await _persistenceService.saveCart(updatedCart);
+   await _persistenceService.saveCartItems(updatedCart);
+ }
+
+ /// Update the quantity of a cart item
+ Future<void> updateCartItemQuantity(String productId, int newQuantity, {String? selectedSize, String? selectedColor}) async {
+   _logger.d('Updating cart item quantity for $productId to $newQuantity');
+
+   if (newQuantity < 1) {
+     _logger.w('Invalid quantity: $newQuantity');
+     return;
+   }
+
+   try {
+     final itemIndex = state.cartItems.indexWhere((item) =>
+       item.product.id == productId &&
+       item.selectedSize == selectedSize &&
+       item.selectedColor == selectedColor
+     );
+
+     if (itemIndex == -1) {
+       _logger.w('Cart item not found: $productId');
+       return;
+     }
+
+     final updatedItem = state.cartItems[itemIndex].copyWith(quantity: newQuantity);
+     final updatedCart = List<CartItemModel>.from(state.cartItems);
+     updatedCart[itemIndex] = updatedItem;
+
+     state = state.copyWith(cartItems: updatedCart);
+
+     // Persist changes
+     await _persistenceService.saveCartItems(updatedCart);
+     _logger.d('Successfully updated cart item quantity');
+   } catch (e) {
+     _logger.e('Failed to update cart item quantity: $e');
+     state = state.copyWith(error: 'Failed to update quantity');
+   }
+ }
+
+ /// Increment cart item quantity
+ Future<void> incrementCartItemQuantity(String productId, {String? selectedSize, String? selectedColor}) async {
+   final item = state.cartItems.firstWhere(
+     (item) => item.product.id == productId &&
+               item.selectedSize == selectedSize &&
+               item.selectedColor == selectedColor,
+     orElse: () => const CartItemModel(product: ProductModel(
+       id: '', name: '', brand: '', price: 0, currency: '',
+       description: '', imageUrls: [], category: '', rating: 0, reviewCount: 0
+     )),
+   );
+
+   if (item.product.id.isNotEmpty) {
+     await updateCartItemQuantity(productId, item.quantity + 1, selectedSize: selectedSize, selectedColor: selectedColor);
+   }
+ }
+
+ /// Decrement cart item quantity (removes if quantity becomes 0)
+ Future<void> decrementCartItemQuantity(String productId, {String? selectedSize, String? selectedColor}) async {
+   final item = state.cartItems.firstWhere(
+     (item) => item.product.id == productId &&
+               item.selectedSize == selectedSize &&
+               item.selectedColor == selectedColor,
+     orElse: () => const CartItemModel(product: ProductModel(
+       id: '', name: '', brand: '', price: 0, currency: '',
+       description: '', imageUrls: [], category: '', rating: 0, reviewCount: 0
+     )),
+   );
+
+   if (item.product.id.isEmpty) return;
+
+   if (item.quantity > 1) {
+     await updateCartItemQuantity(productId, item.quantity - 1, selectedSize: selectedSize, selectedColor: selectedColor);
+   } else {
+     // Remove item if quantity would become 0
+     await removeFromCart(productId, selectedSize: selectedSize, selectedColor: selectedColor);
+   }
  }
 
  Future<void> clearCart() async {
    state = state.copyWith(cartItems: []);
 
    // Clear persisted cart
-   await _persistenceService.clearCart();
+   await _persistenceService.clearCartItems();
  }
- 
+
  double getCartTotal() {
-   return state.cartItems.fold(0, (sum, item) => sum + item.price);
+   return state.cartItems.fold(0.0, (sum, item) => sum + item.totalPrice);
  }
 
   /// Validates product data to prevent malicious data injection

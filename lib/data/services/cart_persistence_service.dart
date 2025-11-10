@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shopping_swipe_app/data/models/product_model.dart';
+import 'package:shopping_swipe_app/data/models/cart_item_model.dart';
 import 'package:logger/logger.dart';
 
 /// Service for persisting cart items and swipe history to local storage
@@ -12,7 +13,59 @@ class CartPersistenceService {
 
   final Logger _logger = Logger();
 
-  /// Save cart items to local storage
+  /// Save cart items to local storage (CartItemModel with quantity)
+  Future<bool> saveCartItems(List<CartItemModel> cartItems) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cartJson = cartItems.map((item) => item.toJson()).toList();
+      final success = await prefs.setString(_cartKey, jsonEncode(cartJson));
+      _logger.d('Cart saved to local storage: ${cartItems.length} items');
+      return success;
+    } catch (e) {
+      _logger.e('Failed to save cart: $e');
+      return false;
+    }
+  }
+
+  /// Load cart items from local storage (CartItemModel with quantity)
+  Future<List<CartItemModel>> loadCartItems() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cartString = prefs.getString(_cartKey);
+
+      if (cartString == null || cartString.isEmpty) {
+        _logger.d('No saved cart found');
+        return [];
+      }
+
+      final List<dynamic> cartJson = jsonDecode(cartString);
+      final cart = cartJson
+          .map((item) => CartItemModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+
+      _logger.d('Cart loaded from local storage: ${cart.length} items');
+      return cart;
+    } catch (e) {
+      _logger.e('Failed to load cart: $e');
+      return [];
+    }
+  }
+
+  /// Clear cart from local storage
+  Future<bool> clearCartItems() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final success = await prefs.remove(_cartKey);
+      _logger.d('Cart cleared from local storage');
+      return success;
+    } catch (e) {
+      _logger.e('Failed to clear cart: $e');
+      return false;
+    }
+  }
+
+  /// Save cart items to local storage (DEPRECATED - kept for backward compatibility)
+  @deprecated
   Future<bool> saveCart(List<ProductModel> cartItems) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -26,7 +79,8 @@ class CartPersistenceService {
     }
   }
 
-  /// Load cart items from local storage
+  /// Load cart items from local storage (DEPRECATED - kept for backward compatibility)
+  @deprecated
   Future<List<ProductModel>> loadCart() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -50,7 +104,8 @@ class CartPersistenceService {
     }
   }
 
-  /// Clear cart from local storage
+  /// Clear cart from local storage (DEPRECATED - kept for backward compatibility)
+  @deprecated
   Future<bool> clearCart() async {
     try {
       final prefs = await SharedPreferences.getInstance();

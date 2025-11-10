@@ -18,6 +18,10 @@ dependencies:
   swipe_cards: ^2.0.0+1
   cached_network_image: ^3.3.0
   flutter_animate: ^4.2.0
+  google_fonts: ^6.1.0
+  shimmer: ^3.0.0
+  lottie: ^3.1.0
+  confetti: ^0.7.0
   
   # Firebase
   firebase_core: ^2.24.2
@@ -61,11 +65,3 @@ flutter:
     - assets/images/
     - assets/models/
     - LOGO.png
-  
-  # Fonts
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-        - asset: assets/fonts/Poppins-Bold.ttf
-          weight: 700
